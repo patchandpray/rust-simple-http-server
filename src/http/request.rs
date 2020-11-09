@@ -4,11 +4,13 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str;
+use super::{QueryString, QueryStringValue};
 
 
+#[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
-    query_string: Option<&'buf str>,
+    query_string: Option<QueryString<'buf>>,
     method: Method,
 }
 
@@ -32,11 +34,12 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         let method: Method = method.parse()?;
 
         let mut query_string = None;
+        // if we find a query string denoted by '?'
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i + 1..]);
+            //Return the query_sting value from path string reference  by using the From trait implemented on QueryString
+            query_string = Some(QueryString::from(&path[i + 1..]));
             path = &path[..i];
         }
-
 
         Ok(Self {
             path,
@@ -49,7 +52,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
 fn get_next_word(request: &str) -> Option<(&str, &str)> {
     for (i, c) in request.chars().enumerate() {
         if c == ' ' || c == '\r' {
-            Some((&request[..i], &request[i + 1..]));
+            return Some((&request[..i], &request[i + 1..]));
         }
     }
     None
