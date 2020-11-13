@@ -5,13 +5,13 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use super::StatusCode;
 
 #[derive(Debug)]
-pub struct Response<'a> {
+pub struct Response {
     status_code: StatusCode,
-    body: Option<&'a str>,
+    body: Option<String>
 }
 
-impl<'a> Response<'a> {
-    pub fn new(status_code: StatusCode, body: Option<&'a str>) -> Self {
+impl Response {
+    pub fn new(status_code: StatusCode, body: Option<String>) -> Self {
         Response{ status_code, body }
     }
 
