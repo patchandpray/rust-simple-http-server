@@ -3,16 +3,18 @@ use std::io::{Write, Result as IoResult};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use super::StatusCode;
+use super::Headers;
 
 #[derive(Debug)]
 pub struct Response {
     status_code: StatusCode,
+    headers: Headers,
     body: Option<String>
 }
 
 impl Response {
     pub fn new(status_code: StatusCode, body: Option<String>) -> Self {
-        Response{ status_code, body }
+        Response{ status_code, headers: Headers::new(), body }
     }
 
     pub fn send(&self, stream: &mut impl Write) -> IoResult<()> {
@@ -22,9 +24,10 @@ impl Response {
         };
         write!(
             stream, 
-            "HTTP/1.1 {} {}\r\n\r\n{}",
+            "HTTP/1.1 {} {}\r\n{}\r\n\r\n{}",
             self.status_code,
             self.status_code.reason_phrase(),
+            self.headers,
             body
         )
     }
