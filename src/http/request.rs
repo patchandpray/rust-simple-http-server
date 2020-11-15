@@ -12,6 +12,7 @@ pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
     method: Method,
+    headers: Vec<&'buf str>
 }
 
 impl<'buf> Request<'buf> {
@@ -26,6 +27,10 @@ impl<'buf> Request<'buf> {
     pub fn query_string(&self) -> Option<&QueryString> {
         self.query_string.as_ref()
     }
+
+    pub fn headers(&self) -> Vec<&str> {
+        todo!()
+    }
 }
 
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
@@ -35,6 +40,9 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     // GET /search?name=abc&sort=1 HTTP/1.1
     fn try_from(buf: &'buf [u8]) -> Result<Self, Self::Error> {
         let request = str::from_utf8(buf)?;
+
+        let (_, headers) = get_next_line(request).ok_or(ParseError::InvalidRequest)?;
+        let headers = get_headers(headers);
 
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
@@ -54,12 +62,35 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
             path = &path[..i];
         }
 
+
         Ok(Self {
             path,
             query_string,
             method,
+            headers,
         })
     }
+}
+
+fn get_headers(headers: &str) -> Vec<&str> {
+    let mut store = Vec::new();
+    for header in headers.lines() {
+        if header.is_empty() {
+            break
+        } else {
+            store.push(header);
+        }
+    } 
+    store
+}
+
+fn get_next_line(request: &str) -> Option<(&str, &str)> {
+    for (i, c) in request.chars().enumerate() { 
+        if c == '\n' {
+            return Some((&request[..i], &request[i + 1..]));
+        }
+    }
+    None
 }
 
 fn get_next_word(request: &str) -> Option<(&str, &str)> {
